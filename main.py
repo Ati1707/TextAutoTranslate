@@ -4,7 +4,8 @@ from charset_normalizer import from_bytes
 from translators import translate_text
 
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QGridLayout, QTextEdit, QPushButton, QComboBox, QFileDialog
+    QApplication, QWidget, QGridLayout, QTextEdit, QPushButton,
+    QComboBox, QFileDialog, QMessageBox, QHBoxLayout
 )
 from PySide6.QtCore import QTimer, Qt, Signal, QObject
 
@@ -27,6 +28,7 @@ class TranslatorApp(QWidget):
         self.thread = None
         self.language_combo = None
         self.open_button = None
+        self.save_button = None
         self.translation_output = None
         self.text_edit = None
         self.worker = None
@@ -45,6 +47,7 @@ class TranslatorApp(QWidget):
 
         # Text Editor
         self.text_edit = QTextEdit()
+        self.text_edit.setAcceptRichText(False)
         self.text_edit.setFontFamily("Courier New")
         self.text_edit.setFontPointSize(12)
         layout.addWidget(self.text_edit, 0, 0, 1, 2)
@@ -56,10 +59,20 @@ class TranslatorApp(QWidget):
         self.translation_output.setReadOnly(True)
         layout.addWidget(self.translation_output, 1, 0, 1, 2)
 
+        # Buttons Layout
+        buttons_layout = QHBoxLayout()
+
         # Open File Button
         self.open_button = QPushButton("Open File")
         self.open_button.clicked.connect(self.open_file)
-        layout.addWidget(self.open_button, 2, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        buttons_layout.addWidget(self.open_button)
+
+        # Save File Button
+        self.save_button = QPushButton("Save File")
+        self.save_button.clicked.connect(self.save_file)
+        buttons_layout.addWidget(self.save_button)
+
+        layout.addLayout(buttons_layout, 2, 0, alignment=Qt.AlignmentFlag.AlignLeft)
 
         # Language Combo Box
         self.language_combo = QComboBox()
@@ -68,10 +81,10 @@ class TranslatorApp(QWidget):
         self.language_combo.setPlaceholderText("Select Target Language")
         layout.addWidget(self.language_combo, 2, 1, alignment=Qt.AlignmentFlag.AlignRight)
 
-        # Set row stretch factors to allocate space (70% for text_edit, 20% for translation_output, 10% for buttons)
-        layout.setRowStretch(0, 7)  # 70% to text_edit
-        layout.setRowStretch(1, 2)  # 20% to translation_output
-        layout.setRowStretch(2, 1)  # 10% to buttons row
+        # Set row stretch factors
+        layout.setRowStretch(0, 7)
+        layout.setRowStretch(1, 2)
+        layout.setRowStretch(2, 1)
 
         # Connect selection change handler
         self.text_edit.selectionChanged.connect(self.handle_selection)
@@ -85,13 +98,11 @@ class TranslatorApp(QWidget):
         )
 
         if file_path:
-            # Detect file encoding
             with open(file_path, "rb") as f:
                 raw_data = f.read()
                 result = from_bytes(raw_data).best()
                 encoding = result.encoding if result else 'utf-8'
 
-            # Read file content
             try:
                 with open(file_path, "r", encoding=encoding) as file:
                     content = file.read()
@@ -104,6 +115,21 @@ class TranslatorApp(QWidget):
 
             self.text_edit.setPlainText(content)
             self.text_edit.setFocus()
+
+    def save_file(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save File",
+            "",
+            "Text Files (*.txt);;All Files (*)"
+        )
+        if file_path:
+            content = self.text_edit.toPlainText()
+            try:
+                with open(file_path, "w", encoding="utf-8") as file:
+                    file.write(content)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save file: {str(e)}")
 
     def handle_selection(self):
         if self.selection_timer.isActive():
@@ -121,7 +147,6 @@ class TranslatorApp(QWidget):
     def start_translation_thread(self, text):
         self.translation_output.setPlainText("Translating...")
 
-        # Create worker and thread
         self.worker = TranslationWorker(text)
         self.thread = threading.Thread(target=self.worker.run)
         self.worker.finished.connect(self.update_translation_output)
