@@ -52,7 +52,7 @@ jobs:
 
       - name: 'Create Release'
         shell: bash
-        run: gh release create --generate-notes ${{ env.release_name }} dist/TextAutoTranslate/TextAutoTranslate.exe
+        run: gh release create --generate-notes --target release ${{ env.release_name }} dist/TextAutoTranslate/TextAutoTranslate.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
