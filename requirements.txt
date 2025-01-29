@@ -1,0 +1,3 @@
+charset-normalizer
+PySide6
+translators
