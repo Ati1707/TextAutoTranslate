@@ -1,5 +1,7 @@
 import sys
 import threading
+import argparse
+import requests
 from charset_normalizer import from_bytes
 from translators import translate_text
 
@@ -13,18 +15,79 @@ from PySide6.QtCore import QTimer, Qt, Signal, QObject
 class TranslationWorker(QObject):
     finished = Signal(str)
 
-    def __init__(self, text):
+    def __init__(self, text, translator, language, llm_url):
         super().__init__()
         self.text = text
+        self.translator = translator
+        self.language = language
+        self.llm_url = llm_url
 
     def run(self):
-        translated = translate_text(self.text, translator="google")
-        self.finished.emit(translated)
+        if self.translator == "Google":
+            translated = translate_text(
+                self.text,
+                translator="google",
+                to_language="en"
+            )
+            self.finished.emit(translated)
+        elif self.translator == "LLM":
+            if self.language:
+                lang_instruction = f"TRANSLATE THIS {self.language.upper()}-LANGUAGE TEXT TO ENGLISH"
+            else:
+                lang_instruction = "AUTO-DETECT THE LANGUAGE OF THIS TEXT AND TRANSLATE TO ENGLISH"
+
+            prompt = (
+                f"Execute this translation task precisely:\n\n"
+                f"1. {lang_instruction}\n"
+                f"2. OUTPUT MUST BE:\n"
+                f"   - PURE TRANSLATION ONLY\n"
+                f"   - NO EXPLANATIONS\n"
+                f"   - NO FORMATTING\n"
+                f"   - NO MARKDOWN\n"
+                f"   - NO QUOTES\n"
+                f"3. IF INPUT IS ENGLISH, OUTPUT IDENTICAL TEXT\n"
+                f"4. PRESERVE NUMBERS/NAMES/SPECIAL TERMS\n"
+                f"5. RESPONSE MUST BE 1 PARAGRAPH, NO LINE BREAKS\n\n"
+                f"INPUT: \"{self.text}\"\n\n"
+                f"TRANSLATION OUTPUT: "
+            )
+
+            data = {
+                "max_context_length": 2048,
+                "max_length": 50,
+                "prompt": prompt,
+                "quiet": False,
+                "rep_pen": 1.1,
+                "rep_pen_range": 256,
+                "rep_pen_slope": 1,
+                "temperature": 0.6,
+                "tfs": 1,
+                "top_a": 0,
+                "top_k": 100,
+                "top_p": 1,
+                "typical": 1
+            }
+
+            try:
+                response = requests.post(
+                    self.llm_url,
+                    json=data,
+                    headers={"Content-Type": "application/json"}
+                )
+                if response.status_code == 200:
+                    result = response.json()
+                    translated = result["results"][0]["text"]
+                    self.finished.emit(translated)
+                else:
+                    self.finished.emit(f"Error: API request failed ({response.status_code})")
+            except Exception as e:
+                self.finished.emit(f"Error: {str(e)}")
 
 
 class TranslatorApp(QWidget):
-    def __init__(self):
+    def __init__(self, llm_url):
         super().__init__()
+        self.llm_url = llm_url
         self.thread = None
         self.language_combo = None
         self.open_button = None
@@ -39,6 +102,7 @@ class TranslatorApp(QWidget):
         self.selection_timer = QTimer()
         self.selection_timer.setSingleShot(True)
         self.selection_timer.timeout.connect(self.process_selection)
+        self.translator_combo = None
         self.init_ui()
 
     def init_ui(self):
@@ -74,12 +138,21 @@ class TranslatorApp(QWidget):
 
         layout.addLayout(buttons_layout, 2, 0, alignment=Qt.AlignmentFlag.AlignLeft)
 
-        # Language Combo Box
+        # Translator Selection Combo Box
+        self.translator_combo = QComboBox()
+        self.translator_combo.addItems(["Google", "LLM"])
+        self.translator_combo.setCurrentIndex(0)
+        layout.addWidget(self.translator_combo, 2, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        # Language Combo Box (updated label dynamically)
         self.language_combo = QComboBox()
         self.language_combo.addItems(self.languages)
         self.language_combo.setCurrentIndex(-1)
         self.language_combo.setPlaceholderText("Select Target Language")
         layout.addWidget(self.language_combo, 2, 1, alignment=Qt.AlignmentFlag.AlignRight)
+
+        # Update language combo label when translator changes
+        self.translator_combo.currentTextChanged.connect(self.update_language_combo_label)
 
         # Set row stretch factors
         layout.setRowStretch(0, 7)
@@ -88,6 +161,12 @@ class TranslatorApp(QWidget):
 
         # Connect selection change handler
         self.text_edit.selectionChanged.connect(self.handle_selection)
+
+    def update_language_combo_label(self, translator):
+        if translator == "LLM":
+            self.language_combo.setPlaceholderText("Select Source Language")
+        else:
+            self.language_combo.setPlaceholderText("Select Target Language")
 
     def open_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -144,20 +223,30 @@ class TranslatorApp(QWidget):
             self.last_selection = selected_text
             self.start_translation_thread(selected_text)
 
-    def start_translation_thread(self, text):
-        self.translation_output.setPlainText("Translating...")
-
-        self.worker = TranslationWorker(text)
-        self.thread = threading.Thread(target=self.worker.run)
-        self.worker.finished.connect(self.update_translation_output)
-        self.thread.start()
 
     def update_translation_output(self, translated_text):
         self.translation_output.setPlainText(translated_text)
 
 
+    def start_translation_thread(self, text):
+        self.translation_output.setPlainText("Translating...")
+        translator = self.translator_combo.currentText()
+        language = self.language_combo.currentText()
+
+        self.worker = TranslationWorker(text, translator, language, self.llm_url)
+        self.thread = threading.Thread(target=self.worker.run)
+        self.worker.finished.connect(self.update_translation_output)
+        self.thread.start()
+
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='TextAutoTranslate Application')
+    parser.add_argument('--llm-url',
+                        default='http://localhost:5001/api/v1/generate',
+                        help='URL for the LLM translation API')
+    args = parser.parse_args()
+
     app = QApplication(sys.argv)
-    window = TranslatorApp()
+    window = TranslatorApp(llm_url=args.llm_url)
     window.show()
     sys.exit(app.exec())
