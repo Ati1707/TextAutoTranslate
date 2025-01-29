@@ -18,7 +18,7 @@ class TranslationWorker(QObject):
         self.text = text
 
     def run(self):
-        translated = translate_text(self.text)
+        translated = translate_text(self.text, translator="google")
         self.finished.emit(translated)
 
 
