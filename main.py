@@ -89,6 +89,7 @@ class TranslatorApp(QWidget):
         super().__init__()
         self.llm_url = llm_url
         self.thread = None
+        self.current_file_path = None  # Track current file path
         self.language_combo = None
         self.open_button = None
         self.save_button = None
@@ -168,6 +169,13 @@ class TranslatorApp(QWidget):
         # Connect selection change handler
         self.text_edit.selectionChanged.connect(self.handle_selection)
 
+    def update_window_title(self):
+        """Update window title with current file path if available"""
+        if self.current_file_path:
+            self.setWindowTitle(f"TextAutoTranslate - {self.current_file_path}")
+        else:
+            self.setWindowTitle("TextAutoTranslate")
+
     def update_language_combo_label(self, translator):
         if translator == "LLM":
             self.language_combo.setPlaceholderText("Select Source Language")
@@ -183,6 +191,8 @@ class TranslatorApp(QWidget):
         )
 
         if file_path:
+            self.current_file_path = file_path
+            self.update_window_title()
             with open(file_path, "rb") as f:
                 raw_data = f.read()
                 result = from_bytes(raw_data).best()
@@ -202,19 +212,31 @@ class TranslatorApp(QWidget):
             self.text_edit.setFocus()
 
     def save_file(self):
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save File",
-            "",
-            "All Files (*)"
-        )
-        if file_path:
+        if self.current_file_path:
+            # Overwrite existing file
             content = self.text_edit.toPlainText()
             try:
-                with open(file_path, "w", encoding="utf-8") as file:
+                with open(self.current_file_path, "w", encoding="utf-8") as file:
                     file.write(content)
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save file: {str(e)}")
+        else:
+            # Save as new file
+            file_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save File",
+                "",
+                "All Files (*)"
+            )
+            if file_path:
+                content = self.text_edit.toPlainText()
+                try:
+                    with open(file_path, "w", encoding="utf-8") as file:
+                        file.write(content)
+                    self.current_file_path = file_path
+                    self.update_window_title()
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Failed to save file: {str(e)}")
 
     def handle_selection(self):
         if self.selection_timer.isActive():
@@ -229,10 +251,8 @@ class TranslatorApp(QWidget):
             self.last_selection = selected_text
             self.start_translation_thread(selected_text)
 
-
     def update_translation_output(self, translated_text):
         self.translation_output.setPlainText(translated_text)
-
 
     def start_translation_thread(self, text):
         self.translation_output.setPlainText("Translating...")
