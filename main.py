@@ -53,14 +53,14 @@ class TranslationWorker(QObject):
             )
 
             data = {
-                "max_context_length": 2048,
-                "max_length": 50,
+                "max_context_length": 4096,
+                "max_length": 150,
                 "prompt": prompt,
                 "quiet": False,
                 "rep_pen": 1.1,
                 "rep_pen_range": 256,
                 "rep_pen_slope": 1,
-                "temperature": 0.6,
+                "temperature": 0.5,
                 "tfs": 1,
                 "top_a": 0,
                 "top_k": 100,
