@@ -136,15 +136,21 @@ class TranslatorApp(QWidget):
         self.save_button.clicked.connect(self.save_file)
         buttons_layout.addWidget(self.save_button)
 
-        layout.addLayout(buttons_layout, 2, 0, alignment=Qt.AlignmentFlag.AlignLeft)
-
         # Translator Selection Combo Box
         self.translator_combo = QComboBox()
         self.translator_combo.addItems(["Google", "LLM"])
         self.translator_combo.setCurrentIndex(0)
-        layout.addWidget(self.translator_combo, 2, 0, alignment=Qt.AlignmentFlag.AlignLeft)
 
-        # Language Combo Box (updated label dynamically)
+        # Combine buttons and translator combo in a horizontal layout
+        left_header_layout = QHBoxLayout()
+        left_header_layout.addLayout(buttons_layout)
+        left_header_layout.addWidget(self.translator_combo)
+        left_header_layout.addStretch()  # Push elements to the left
+
+        # Add combined layout to grid
+        layout.addLayout(left_header_layout, 2, 0)
+
+        # Language Combo Box
         self.language_combo = QComboBox()
         self.language_combo.addItems(self.languages)
         self.language_combo.setCurrentIndex(-1)
