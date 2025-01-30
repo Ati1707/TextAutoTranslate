@@ -179,7 +179,7 @@ class TranslatorApp(QWidget):
             self,
             "Open File",
             "",
-            "Text Files (*.txt);;All Files (*)"
+            "All Files (*)"
         )
 
         if file_path:
@@ -206,7 +206,7 @@ class TranslatorApp(QWidget):
             self,
             "Save File",
             "",
-            "Text Files (*.txt);;All Files (*)"
+            "All Files (*)"
         )
         if file_path:
             content = self.text_edit.toPlainText()
