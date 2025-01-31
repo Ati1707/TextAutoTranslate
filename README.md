@@ -32,8 +32,8 @@ Launch the application:
    python main.py
    ```
 
-- Open a text file (**File > Open** or `Ctrl+O`) or copy your text in the upper panel
-- Select text in the editor (translations start after 1 second of selection)
+- Open a text file or copy your text in the upper panel
+- Select text in the editor (translation start after 1 second of selection)
 - View translation in the bottom panel
 
 ## Dependencies 📦
