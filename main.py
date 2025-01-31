@@ -216,8 +216,14 @@ class TranslatorApp(QWidget):
             # Overwrite existing file
             content = self.text_edit.toPlainText()
             try:
-                with open(self.current_file_path, "w", encoding="utf-8") as file:
-                    file.write(content)
+                reply = QMessageBox.question(self, "Confirm File Overwrite",
+                                             f"You are about to overwrite:{self.current_file_path}"
+                                             f"This will permanently replace the existing file. Are you sure you want to continue?",
+                                             QMessageBox.StandardButton.Yes,
+                                             QMessageBox.StandardButton.No)
+                if reply == QMessageBox.StandardButton.Yes:
+                    with open(self.current_file_path, "w", encoding="utf-8") as file:
+                        file.write(content)
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save file: {str(e)}")
         else:
