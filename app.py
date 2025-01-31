@@ -1,27 +1,29 @@
 import threading
 from PySide6.QtWidgets import (
-    QWidget, QGridLayout, QTextEdit, QPushButton,
-    QComboBox, QFileDialog, QMessageBox, QHBoxLayout
+    QMainWindow,
+    QWidget,
+    QGridLayout,
+    QTextEdit,
+    QComboBox,
+    QFileDialog,
+    QMessageBox,
+    QHBoxLayout,
 )
+from PySide6.QtGui import QAction
 from PySide6.QtCore import QTimer, Qt
 from charset_normalizer import from_bytes
 from translation_worker import TranslationWorker
 
-TRANSLATION_PROVIDERS = {
-    "Google", "KoboldCPP"
-}
+TRANSLATION_PROVIDERS = {"Google", "KoboldCPP"}
 
 
-class TranslatorApp(QWidget):
-
+class TranslatorApp(QMainWindow):
     def __init__(self, llm_url):
         super().__init__()
         self.llm_url = llm_url
         self.thread = None
         self.current_file_path = None
         self.language_combo = None
-        self.open_button = None
-        self.save_button = None
         self.translation_output = None
         self.text_edit = None
         self.worker = None
@@ -33,72 +35,113 @@ class TranslatorApp(QWidget):
         self.selection_timer.setSingleShot(True)
         self.selection_timer.timeout.connect(self.process_selection)
         self.translator_combo = None
+
+        # Create central widget and main layout
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        self.main_layout = QGridLayout(central_widget)
+        self.main_layout.setContentsMargins(10, 10, 10, 10)
+
         self.init_ui()
+        self.create_menus()
 
+    def create_menus(self):
+        menu_bar = self.menuBar()
 
+        # File menu
+        file_menu = menu_bar.addMenu("&File")
+        open_action = QAction("&Open", self)
+        open_action.triggered.connect(self.open_file)
+        open_action.setShortcut("Ctrl+O")
+        file_menu.addAction(open_action)
+
+        save_action = QAction("&Save", self)
+        save_action.triggered.connect(self.save_file)
+        save_action.setShortcut("Ctrl+S")
+        file_menu.addAction(save_action)
+
+        file_menu.addSeparator()
+        exit_action = QAction("&Exit", self)
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+
+        # Edit menu
+        edit_menu = menu_bar.addMenu("&Edit")
+        undo_action = QAction("&Undo", self)
+        undo_action.triggered.connect(self.text_edit.undo)
+        undo_action.setShortcut("Ctrl+Z")
+        edit_menu.addAction(undo_action)
+
+        redo_action = QAction("&Redo", self)
+        redo_action.triggered.connect(self.text_edit.redo)
+        redo_action.setShortcut("Ctrl+Y")
+        edit_menu.addAction(redo_action)
+
+        # Help menu
+        help_menu = menu_bar.addMenu("&Help")
+        about_action = QAction("&About", self)
+        about_action.triggered.connect(self.show_about)
+        help_menu.addAction(about_action)
+
+    def show_about(self):
+        about_box = QMessageBox(self)
+        about_box.setWindowTitle("About TextAutoTranslate")
+        about_box.setTextFormat(Qt.TextFormat.RichText)
+        about_box.setText(
+            "A translation tool with multiple providers<br><br>"
+            "Version 0.1<br>"
+            "Copyright © 2025 Ati1707<br><br>"
+            "<a href='https://github.com/Ati1707/TextAutoTranslate'>GitHub Repository</a>"
+        )
+        about_box.exec()
 
     def init_ui(self):
-        layout = QGridLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-
         # Text Editor
         self.text_edit = QTextEdit()
         self.text_edit.setAcceptRichText(False)
         self.text_edit.setFontFamily("Courier New")
         self.text_edit.setFontPointSize(12)
-        layout.addWidget(self.text_edit, 0, 0, 1, 2)
+        self.main_layout.addWidget(self.text_edit, 0, 0, 1, 2)
 
         # Translation Output
         self.translation_output = QTextEdit()
         self.translation_output.setFontFamily("Courier New")
         self.translation_output.setFontPointSize(12)
         self.translation_output.setReadOnly(True)
-        layout.addWidget(self.translation_output, 1, 0, 1, 2)
-
-        # Buttons Layout
-        buttons_layout = QHBoxLayout()
-
-        # Open File Button
-        self.open_button = QPushButton("Open File")
-        self.open_button.clicked.connect(self.open_file)
-        buttons_layout.addWidget(self.open_button)
-
-        # Save File Button
-        self.save_button = QPushButton("Save File")
-        self.save_button.clicked.connect(self.save_file)
-        buttons_layout.addWidget(self.save_button)
+        self.main_layout.addWidget(self.translation_output, 1, 0, 1, 2)
 
         # Translator Selection Combo Box
         self.translator_combo = QComboBox()
         self.translator_combo.addItems(list(TRANSLATION_PROVIDERS))
         self.translator_combo.setCurrentIndex(0)
 
-        # Combine buttons and translator combo in a horizontal layout
+        # Header layout (left side)
         left_header_layout = QHBoxLayout()
-        left_header_layout.addLayout(buttons_layout)
         left_header_layout.addWidget(self.translator_combo)
-        left_header_layout.addStretch()  # Push elements to the left
+        left_header_layout.addStretch()
 
         # Add combined layout to grid
-        layout.addLayout(left_header_layout, 2, 0)
+        self.main_layout.addLayout(left_header_layout, 2, 0)
 
         # Language Combo Box
         self.language_combo = QComboBox()
         self.language_combo.addItems(self.languages)
         self.language_combo.setCurrentIndex(-1)
         self.language_combo.setPlaceholderText("Select Target Language")
-        layout.addWidget(self.language_combo, 2, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        self.main_layout.addWidget(
+            self.language_combo, 2, 1, alignment=Qt.AlignmentFlag.AlignRight
+        )
 
-        # Update language combo label when translator changes
-        self.translator_combo.currentTextChanged.connect(self.update_language_combo_label)
+        # Connect signals
+        self.translator_combo.currentTextChanged.connect(
+            self.update_language_combo_label
+        )
+        self.text_edit.selectionChanged.connect(self.handle_selection)
 
         # Set row stretch factors
-        layout.setRowStretch(0, 7)
-        layout.setRowStretch(1, 2)
-        layout.setRowStretch(2, 1)
-
-        # Connect selection change handler
-        self.text_edit.selectionChanged.connect(self.handle_selection)
+        self.main_layout.setRowStretch(0, 7)
+        self.main_layout.setRowStretch(1, 2)
+        self.main_layout.setRowStretch(2, 1)
 
     def update_window_title(self):
         """Update window title with current file path if available"""
@@ -115,10 +158,7 @@ class TranslatorApp(QWidget):
 
     def open_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open File",
-            "",
-            "All Files (*)"
+            self, "Open File", "", "All Files (*)"
         )
 
         if file_path:
@@ -127,14 +167,14 @@ class TranslatorApp(QWidget):
             with open(file_path, "rb") as f:
                 raw_data = f.read()
                 result = from_bytes(raw_data).best()
-                encoding = result.encoding if result else 'utf-8'
+                encoding = result.encoding if result else "utf-8"
 
             try:
                 with open(file_path, "r", encoding=encoding) as file:
                     content = file.read()
             except (UnicodeDecodeError, LookupError):
                 try:
-                    with open(file_path, "r", encoding='utf-16') as file:
+                    with open(file_path, "r", encoding="utf-16") as file:
                         content = file.read()
                 except Exception as e:
                     content = f"Error: Failed to decode file - {str(e)}"
@@ -147,11 +187,14 @@ class TranslatorApp(QWidget):
             # Overwrite existing file
             content = self.text_edit.toPlainText()
             try:
-                reply = QMessageBox.question(self, "Confirm File Overwrite",
-                                             f"You are about to overwrite:{self.current_file_path}"
-                                             f"This will permanently replace the existing file. Are you sure you want to continue?",
-                                             QMessageBox.StandardButton.Yes,
-                                             QMessageBox.StandardButton.No)
+                reply = QMessageBox.question(
+                    self,
+                    "Confirm File Overwrite",
+                    f"You are about to overwrite:{self.current_file_path}"
+                    f"This will permanently replace the existing file. Are you sure you want to continue?",
+                    QMessageBox.StandardButton.Yes,
+                    QMessageBox.StandardButton.No,
+                )
                 if reply == QMessageBox.StandardButton.Yes:
                     with open(self.current_file_path, "w", encoding="utf-8") as file:
                         file.write(content)
@@ -160,10 +203,7 @@ class TranslatorApp(QWidget):
         else:
             # Save as new file
             file_path, _ = QFileDialog.getSaveFileName(
-                self,
-                "Save File",
-                "",
-                "All Files (*)"
+                self, "Save File", "", "All Files (*)"
             )
             if file_path:
                 content = self.text_edit.toPlainText()
@@ -173,7 +213,9 @@ class TranslatorApp(QWidget):
                     self.current_file_path = file_path
                     self.update_window_title()
                 except Exception as e:
-                    QMessageBox.critical(self, "Error", f"Failed to save file: {str(e)}")
+                    QMessageBox.critical(
+                        self, "Error", f"Failed to save file: {str(e)}"
+                    )
 
     def handle_selection(self):
         if self.selection_timer.isActive():

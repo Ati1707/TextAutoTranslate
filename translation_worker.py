@@ -2,6 +2,7 @@ from PySide6.QtCore import QObject, Signal
 from providers.translation.google import GoogleTranslator
 from providers.llm.koboldcpp import KoboldCPPProvider
 
+
 class TranslationWorker(QObject):
     finished = Signal(str)
 
@@ -15,16 +16,10 @@ class TranslationWorker(QObject):
     def run(self):
         try:
             if self.translator == "Google":
-                translated = GoogleTranslator.translate(
-                    self.text,
-                    target_lang='en'
-                )
+                translated = GoogleTranslator.translate(self.text, target_lang="en")
             elif self.translator == "KoboldCPP":
                 provider = KoboldCPPProvider(self.llm_url)
-                translated = provider.translate(
-                    self.text,
-                    source_lang=self.language
-                )
+                translated = provider.translate(self.text, source_lang=self.language)
             else:
                 raise ValueError("Unsupported translator")
 

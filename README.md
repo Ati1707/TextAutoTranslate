@@ -1,11 +1,11 @@
 # TextAutoTranslate 🌍📝
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-![Python Version](https://img.shields.io/badge/Python-3.8%2B-blue)
+![Python Version](https://img.shields.io/badge/python-3.10-%233572A5?logo=python&logoColor=white)
 
 A GUI tool to instantly translate selected text from files. Perfect for multilingual content editing!
 
-![Demo Screenshot](https://github.com/user-attachments/assets/748d6b8e-27dc-4421-b3c8-8e4848323bed)
+![Demo Screenshot](https://github.com/user-attachments/assets/4c3841af-bb24-436b-80ba-f7688dc8937d)
 
 ## Features ✨
 - **Real-time translation** of selected text in files
@@ -32,8 +32,8 @@ Launch the application:
    python main.py
    ```
 
-- Open a text file (**File > Open** or `Ctrl+O`) or copy your text in the upper panel
-- Select text in the editor (translations start after 1 second of selection)
+- Open a text file or copy your text in the upper panel
+- Select text in the editor (translation start after 1 second of selection)
 - View translation in the bottom panel
 
 ## Dependencies 📦

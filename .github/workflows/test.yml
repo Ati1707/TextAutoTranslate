@@ -1,0 +1,41 @@
+name: Test
+
+on: 
+  push:
+    branches:
+      - "main"
+
+env:
+  release_name: 0.1.${{github.run_number}}
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pyinstaller -r requirements.txt
+
+      - name: Build with PyInstaller
+        run: >
+          pyinstaller --onefile main.py 
+          --name TextAutoTranslate 
+          --distpath dist/TextAutoTranslate 
+          --workpath .pyinstaller-cache 
+          --specpath .pyinstaller-cache 
+          --hidden-import=urllib3.contrib.resolver.system 
+          --hidden-import=urllib3.contrib.hface.protocols.http1 
+          --hidden-import=urllib3.contrib.hface.protocols.http2 
+          --hidden-import=urllib3.contrib.hface.protocols.http3 
+          --noconsole
