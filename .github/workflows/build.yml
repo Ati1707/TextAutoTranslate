@@ -28,7 +28,7 @@ jobs:
           pip install pyinstaller -r requirements.txt
 
       - name: Build with PyInstaller
-        run: |
+        run: >
           pyinstaller --onefile main.py \
             --name TextAutoTranslate \
             --distpath dist/TextAutoTranslate \
