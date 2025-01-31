@@ -53,13 +53,11 @@ TRANSLATION OUTPUT: """
             "top_a": 0,
             "top_k": 100,
             "top_p": 1,
-            "typical": 1
+            "typical": 1,
         }
 
         response = requests.post(
-            self.api_url,
-            json=data,
-            headers={"Content-Type": "application/json"}
+            self.api_url, json=data, headers={"Content-Type": "application/json"}
         )
 
         if response.status_code == 200:

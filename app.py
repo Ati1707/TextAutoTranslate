@@ -1,19 +1,22 @@
 import threading
 from PySide6.QtWidgets import (
-    QWidget, QGridLayout, QTextEdit, QPushButton,
-    QComboBox, QFileDialog, QMessageBox, QHBoxLayout
+    QWidget,
+    QGridLayout,
+    QTextEdit,
+    QPushButton,
+    QComboBox,
+    QFileDialog,
+    QMessageBox,
+    QHBoxLayout,
 )
 from PySide6.QtCore import QTimer, Qt
 from charset_normalizer import from_bytes
 from translation_worker import TranslationWorker
 
-TRANSLATION_PROVIDERS = {
-    "Google", "KoboldCPP"
-}
+TRANSLATION_PROVIDERS = {"Google", "KoboldCPP"}
 
 
 class TranslatorApp(QWidget):
-
     def __init__(self, llm_url):
         super().__init__()
         self.llm_url = llm_url
@@ -34,8 +37,6 @@ class TranslatorApp(QWidget):
         self.selection_timer.timeout.connect(self.process_selection)
         self.translator_combo = None
         self.init_ui()
-
-
 
     def init_ui(self):
         layout = QGridLayout(self)
@@ -87,10 +88,14 @@ class TranslatorApp(QWidget):
         self.language_combo.addItems(self.languages)
         self.language_combo.setCurrentIndex(-1)
         self.language_combo.setPlaceholderText("Select Target Language")
-        layout.addWidget(self.language_combo, 2, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(
+            self.language_combo, 2, 1, alignment=Qt.AlignmentFlag.AlignRight
+        )
 
         # Update language combo label when translator changes
-        self.translator_combo.currentTextChanged.connect(self.update_language_combo_label)
+        self.translator_combo.currentTextChanged.connect(
+            self.update_language_combo_label
+        )
 
         # Set row stretch factors
         layout.setRowStretch(0, 7)
@@ -115,10 +120,7 @@ class TranslatorApp(QWidget):
 
     def open_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open File",
-            "",
-            "All Files (*)"
+            self, "Open File", "", "All Files (*)"
         )
 
         if file_path:
@@ -127,14 +129,14 @@ class TranslatorApp(QWidget):
             with open(file_path, "rb") as f:
                 raw_data = f.read()
                 result = from_bytes(raw_data).best()
-                encoding = result.encoding if result else 'utf-8'
+                encoding = result.encoding if result else "utf-8"
 
             try:
                 with open(file_path, "r", encoding=encoding) as file:
                     content = file.read()
             except (UnicodeDecodeError, LookupError):
                 try:
-                    with open(file_path, "r", encoding='utf-16') as file:
+                    with open(file_path, "r", encoding="utf-16") as file:
                         content = file.read()
                 except Exception as e:
                     content = f"Error: Failed to decode file - {str(e)}"
@@ -147,11 +149,14 @@ class TranslatorApp(QWidget):
             # Overwrite existing file
             content = self.text_edit.toPlainText()
             try:
-                reply = QMessageBox.question(self, "Confirm File Overwrite",
-                                             f"You are about to overwrite:{self.current_file_path}"
-                                             f"This will permanently replace the existing file. Are you sure you want to continue?",
-                                             QMessageBox.StandardButton.Yes,
-                                             QMessageBox.StandardButton.No)
+                reply = QMessageBox.question(
+                    self,
+                    "Confirm File Overwrite",
+                    f"You are about to overwrite:{self.current_file_path}"
+                    f"This will permanently replace the existing file. Are you sure you want to continue?",
+                    QMessageBox.StandardButton.Yes,
+                    QMessageBox.StandardButton.No,
+                )
                 if reply == QMessageBox.StandardButton.Yes:
                     with open(self.current_file_path, "w", encoding="utf-8") as file:
                         file.write(content)
@@ -160,10 +165,7 @@ class TranslatorApp(QWidget):
         else:
             # Save as new file
             file_path, _ = QFileDialog.getSaveFileName(
-                self,
-                "Save File",
-                "",
-                "All Files (*)"
+                self, "Save File", "", "All Files (*)"
             )
             if file_path:
                 content = self.text_edit.toPlainText()
@@ -173,7 +175,9 @@ class TranslatorApp(QWidget):
                     self.current_file_path = file_path
                     self.update_window_title()
                 except Exception as e:
-                    QMessageBox.critical(self, "Error", f"Failed to save file: {str(e)}")
+                    QMessageBox.critical(
+                        self, "Error", f"Failed to save file: {str(e)}"
+                    )
 
     def handle_selection(self):
         if self.selection_timer.isActive():
