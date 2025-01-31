@@ -37,7 +37,7 @@ jobs:
             --hidden-import=urllib3.contrib.resolver.system \
             --hidden-import=urllib3.contrib.hface.protocols.http1 \
             --hidden-import=urllib3.contrib.hface.protocols.http2 \
-            --hidden-import=urllib3.contrib.hface.protocols.http3 \   
+            --hidden-import=urllib3.contrib.hface.protocols.http3 \
             --noconsole
 
       - name: Upload Artifacts
