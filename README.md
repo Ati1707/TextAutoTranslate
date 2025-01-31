@@ -5,7 +5,7 @@
 
 A GUI tool to instantly translate selected text from files. Perfect for multilingual content editing!
 
-![Demo Screenshot](https://github.com/user-attachments/assets/748d6b8e-27dc-4421-b3c8-8e4848323bed)
+![Demo Screenshot](https://github.com/user-attachments/assets/4c3841af-bb24-436b-80ba-f7688dc8937d)
 
 ## Features ✨
 - **Real-time translation** of selected text in files
