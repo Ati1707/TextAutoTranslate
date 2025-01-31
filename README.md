@@ -1,7 +1,7 @@
 # TextAutoTranslate 🌍📝
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-![Python Version](https://img.shields.io/badge/Python-3.8%2B-blue)
+![Python Version](https://img.shields.io/badge/python-3.10-%233572A5?logo=python&logoColor=white)
 
 A GUI tool to instantly translate selected text from files. Perfect for multilingual content editing!
 
