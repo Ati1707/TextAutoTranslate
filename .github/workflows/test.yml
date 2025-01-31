@@ -1,4 +1,4 @@
-name: Test Commit
+name: Test
 
 on: 
   push:
