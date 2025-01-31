@@ -14,45 +14,40 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4.2.2
-        with:
-          persist-credentials: false
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5.3.0
+        uses: actions/setup-python@v5
         with:
-          python-version: '>=3.10'
+          python-version: '3.10'
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
+          pip install --upgrade pip
           pip install pyinstaller -r requirements.txt
 
       - name: Build with PyInstaller
         run: |
-          pyinstaller --onefile main.py --name TextAutoTranslate --hidden-import=urllib3.contrib.resolver.system --hidden-import=urllib3.contrib.hface.protocols.http2 --hidden-import=urllib3.contrib.hface.protocols.http3  --noconsole
-
-
-      - name: Create package directory
-        run: mkdir -p dist/TextAutoTranslate
-        
-
-      - name: Move the built binary
-        run: mv dist/TextAutoTranslate.exe dist/TextAutoTranslate/
-
+          pyinstaller --onefile main.py \
+            --name TextAutoTranslate \
+            --distpath dist/TextAutoTranslate \
+            --workpath .pyinstaller-cache \
+            --specpath .pyinstaller-cache \
+            --hidden-import=urllib3.contrib.resolver.system \
+            --hidden-import=urllib3.contrib.hface.protocols.http1 \
+            --hidden-import=urllib3.contrib.hface.protocols.http2 \
+            --hidden-import=urllib3.contrib.hface.protocols.http3 \   
+            --noconsole
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v4
         with:
           name: TextAutoTranslate
-          path: dist/
+          path: dist/TextAutoTranslate/
 
-      - name: Download Artifact
-        id: download
-        uses: actions/download-artifact@v4.1.8
-
-      - name: 'Create Release'
+      - name: Create Release
         shell: bash
         run: gh release create --generate-notes --target release ${{ env.release_name }} dist/TextAutoTranslate/TextAutoTranslate.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
