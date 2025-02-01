@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QHBoxLayout,
 )
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QTextCursor
 from PySide6.QtCore import QTimer, Qt
 from charset_normalizer import from_bytes
 from translation_worker import TranslationWorker
@@ -27,6 +27,10 @@ class TranslatorApp(QMainWindow):
         self.translation_output = None
         self.text_edit = None
         self.worker = None
+        self.auto_replace_action = None
+        self.original_selection_start = 0
+        self.original_selection_end = 0
+
         self.setWindowTitle("TextAutoTranslate")
         self.resize(1000, 600)
         self.languages = ["English", "Spanish", "French", "German", "Chinese"]
@@ -36,7 +40,6 @@ class TranslatorApp(QMainWindow):
         self.selection_timer.timeout.connect(self.process_selection)
         self.translator_combo = None
 
-        # Create central widget and main layout
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         self.main_layout = QGridLayout(central_widget)
@@ -76,6 +79,13 @@ class TranslatorApp(QMainWindow):
         redo_action.triggered.connect(self.text_edit.redo)
         redo_action.setShortcut("Ctrl+Y")
         edit_menu.addAction(redo_action)
+
+        # Options menu
+        options_menu = menu_bar.addMenu("&Options")
+        self.auto_replace_action = QAction("Auto-replace selection", self)
+        self.auto_replace_action.setCheckable(True)
+        self.auto_replace_action.setChecked(False)
+        options_menu.addAction(self.auto_replace_action)
 
         # Help menu
         help_menu = menu_bar.addMenu("&Help")
@@ -144,7 +154,6 @@ class TranslatorApp(QMainWindow):
         self.main_layout.setRowStretch(2, 1)
 
     def update_window_title(self):
-        """Update window title with current file path if available"""
         if self.current_file_path:
             self.setWindowTitle(f"TextAutoTranslate - {self.current_file_path}")
         else:
@@ -184,7 +193,6 @@ class TranslatorApp(QMainWindow):
 
     def save_file(self):
         if self.current_file_path:
-            # Overwrite existing file
             content = self.text_edit.toPlainText()
             try:
                 reply = QMessageBox.question(
@@ -201,7 +209,6 @@ class TranslatorApp(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save file: {str(e)}")
         else:
-            # Save as new file
             file_path, _ = QFileDialog.getSaveFileName(
                 self, "Save File", "", "All Files (*)"
             )
@@ -228,10 +235,27 @@ class TranslatorApp(QMainWindow):
 
         if selected_text and selected_text != self.last_selection:
             self.last_selection = selected_text
+            self.original_selection_start = cursor.selectionStart()
+            self.original_selection_end = cursor.selectionEnd()
             self.start_translation_thread(selected_text)
 
     def update_translation_output(self, translated_text):
         self.translation_output.setPlainText(translated_text)
+
+        if self.auto_replace_action.isChecked():
+            new_cursor = self.text_edit.textCursor()
+            new_cursor.beginEditBlock()
+
+            new_cursor.setPosition(self.original_selection_start)
+            new_cursor.setPosition(
+                self.original_selection_end, QTextCursor.MoveMode.KeepAnchor
+            )
+
+            new_cursor.insertText(translated_text)
+            new_cursor.endEditBlock()
+
+            new_cursor.setPosition(self.original_selection_start + len(translated_text))
+            self.text_edit.setTextCursor(new_cursor)
 
     def start_translation_thread(self, text):
         self.translation_output.setPlainText("Translating...")
