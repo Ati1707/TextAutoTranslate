@@ -40,12 +40,6 @@ jobs:
           --hidden-import=urllib3.contrib.hface.protocols.http3 
           --noconsole
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: TextAutoTranslate
-          path: dist/TextAutoTranslate/
-
       - name: Create Release
         shell: bash
         run: gh release create --generate-notes --target release ${{ env.release_name }} dist/TextAutoTranslate/TextAutoTranslate.exe
