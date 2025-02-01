@@ -14,7 +14,7 @@ from PySide6.QtCore import QTimer, Qt
 from charset_normalizer import from_bytes
 from translation_worker import TranslationWorker
 
-TRANSLATION_PROVIDERS = {"Google", "KoboldCPP"}
+TRANSLATION_PROVIDERS = {"Bing", "Google", "Yandex", "KoboldCPP"}
 
 
 class TranslatorApp(QMainWindow):
