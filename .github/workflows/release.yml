@@ -1,12 +1,12 @@
-name: Build
+name: Release
 
 on: 
   push:
-    branches:
-      - "release"
-
-env:
-  release_name: 0.1.${{github.run_number}}
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+a[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+b[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
 
 jobs:
   build:
@@ -42,6 +42,9 @@ jobs:
 
       - name: Create Release
         shell: bash
-        run: gh release create --generate-notes --target release ${{ env.release_name }} dist/TextAutoTranslate/TextAutoTranslate.exe
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --generate-notes \
+            dist/TextAutoTranslate/TextAutoTranslate.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
