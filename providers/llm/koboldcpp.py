@@ -6,11 +6,7 @@ class KoboldCPPProvider:
         self.api_url = api_url
 
     def translate(self, text, source_lang=None, target_lang="English"):
-        source_part = (
-            f"{source_lang.upper()}-LANGUAGE TEXT"
-            if source_lang
-            else "AUTO-DETECTED LANGUAGE TEXT"
-        )
+        source_part = f"{source_lang.upper()}" if source_lang else "CHINESE"
 
         target_part = (
             target_lang.upper()
@@ -18,27 +14,36 @@ class KoboldCPPProvider:
             else "ENGLISH"
         )
 
-        lang_instruction = (
-            f"TRANSLATE THIS {source_part} TO {target_part}\n"
-            "PRESERVE NUMBERS/NAMES/SPECIAL TERMS AND USE NATURAL FLOW"
-        )
+        prompt = f"""STRICT TRANSLATION TASK: {source_part} → {target_part}
 
-        prompt = f"""Execute this translation task precisely:
+        You are a professional translation engine. Your sole function is to convert Chinese text to English with absolute precision. Follow these directives without exception:
 
-1. {lang_instruction}
-2. OUTPUT MUST BE:
-   - PURE TRANSLATION ONLY
-   - NO EXPLANATIONS
-   - NO FORMATTING
-   - NO MARKDOWN
-   - NO QUOTES
-3. IF INPUT IS ENGLISH, OUTPUT IDENTICAL TEXT
-4. PRESERVE NUMBERS/NAMES/SPECIAL TERMS
-5. RESPONSE MUST BE 1 PARAGRAPH, NO LINE BREAKS
+        1. MANDATORY OUTPUT FORMAT:
+           - PURE TRANSLATION ONLY
+           - NO CHINESE CHARACTERS IN OUTPUT
+           - NO EXPLANATIONS/COMMENTARY
+           - NO MARKDOWN/FORMATTING
+           - NO QUOTES/BRACKETS
+           - PRESERVE ALL NUMBERS/NAMES/SPECIAL TERMS
+           - HANDLE SPECIAL CHARACTERS EXACTLY (%, $, ©, etc.)
+           - SINGLE PARAGRAPH, NO LINE BREAKS
 
-INPUT: "{text}"
+        2. CRITICAL RULES:
+           - IF INPUT CONTAINS CHINESE, OUTPUT MUST BE ENGLISH
+           - NEVER PRESERVE CHINESE CHARACTERS
+           - TRANSLATE ALL TEXT, INCLUDING IDIOMS/PROVERBS
+           - MAINTAIN ORIGINAL TEXT STRUCTURE
+           - USE NATURAL, COLLOQUIAL ENGLISH
 
-TRANSLATION OUTPUT: """
+        3. FAILURE CONDITIONS:
+           - CHINESE CHARACTERS IN OUTPUT = INCOMPLETE TRANSLATION
+           - ADDED EXPLANATIONS = TASK FAILURE
+           - FORMATTING DEVIATIONS = ERROR
+
+        INPUT TEXT FOR TRANSLATION:
+        {text}
+
+        TRANSLATION OUTPUT:"""
 
         data = {
             "max_context_length": 4096,
