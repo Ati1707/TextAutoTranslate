@@ -1,5 +1,9 @@
 from PySide6.QtCore import QObject, Signal
-from providers.translation.google import GoogleTranslator
+from providers.translation.providers import (
+    GoogleTranslator,
+    YandexTranslator,
+    BingTranslator,
+)
 from providers.llm.koboldcpp import KoboldCPPProvider
 
 
@@ -17,6 +21,10 @@ class TranslationWorker(QObject):
         try:
             if self.translator == "Google":
                 translated = GoogleTranslator.translate(self.text, target_lang="en")
+            elif self.translator == "Yandex":
+                translated = YandexTranslator.translate(self.text, target_lang="en")
+            elif self.translator == "Bing":
+                translated = BingTranslator.translate(self.text, target_lang="en")
             elif self.translator == "KoboldCPP":
                 provider = KoboldCPPProvider(self.llm_url)
                 translated = provider.translate(self.text, source_lang=self.language)
