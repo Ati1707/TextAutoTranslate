@@ -1,4 +1,4 @@
-from providers.translation.base_translator import BaseTranslator
+from .base_translator import BaseTranslator
 
 
 class BingTranslator(BaseTranslator):
