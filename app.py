@@ -160,7 +160,7 @@ class TranslatorApp(QMainWindow):
             self.setWindowTitle("TextAutoTranslate")
 
     def update_language_combo_label(self, translator):
-        if translator == "LLM":
+        if translator == "KoboldCPP":
             self.language_combo.setPlaceholderText("Select Source Language")
         else:
             self.language_combo.setPlaceholderText("Select Target Language")
